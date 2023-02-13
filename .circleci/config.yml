@@ -20,10 +20,12 @@ commands:
 docker_image1: &node_image
   docker:
       - image: circleci/node:13.8.0
-
 docker_image2: &aws_image
   docker:
       - image: amazon/aws-cli
+docker_image3: &ansible_image
+  docker:
+      - image: python:3.7-alpine3.11
 
 jobs:
   build-frontend:
@@ -156,6 +158,28 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
 
+configure-infrastructure:
+    docker:
+      <<: *ansible_image
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install Ansible and awscli
+          command: |
+            pip install awscli
+            apk add --update ansible
+      - run:
+          name: Configure server
+          command: |
+            export  ANSIBLE_HOST_KEY_CHECKING=false
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt configure-server.yml --private-key=~/.ssh/udacity.pem
+      - destroy-environment:  
 
 workflows:
   default:
@@ -172,6 +196,5 @@ workflows:
           requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          # filters:
-          #   branches:
-          #     only: [test-feature-branch]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
