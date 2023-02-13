@@ -180,7 +180,7 @@ jobs:
       - destroy-environment
 
   configure-infrastructure:
-      <<: *aws-node_image
+      <<: *ansible_image
       steps:
         - checkout
         - add_ssh_keys:
