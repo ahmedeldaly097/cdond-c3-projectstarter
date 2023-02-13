@@ -167,17 +167,14 @@ jobs:
         - attach_workspace:
             at: ~/
         - run:
-            name: Install Ansible and awscli
+            name: Install Ansible
             command: |
-              Your code here
               apk add --update ansible 
-              yum -y install tar gzip
-              npm install
         - run:
             name: Configure server
             command: |
               cd .circleci/ansible
-              ansible-playbook -i inventory.txt configure-server.yml --private-key=~/.ssh/udacity.pem
+              ansible-playbook -i inventory.txt configure-server.yml
         - destroy-environment
 
 workflows:
