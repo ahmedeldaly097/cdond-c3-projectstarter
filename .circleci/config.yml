@@ -209,7 +209,6 @@ jobs:
         - image: mareimorsy/aws-node
       steps:
         - checkout
-        - aws-install
         - run:
             name: Run migrations
             command: |
@@ -278,11 +277,9 @@ jobs:
           keys: [backend-deps]
       - aws-install
       - run:
-            name: Install Ansible & nodejs
+            name: Install Ansible
             command: |
               apk add --update ansible
-              curl -fsSL https://deb.nodesource.com/setup_16.x
-              sudo apt-get install nodejs
       - run:
           name: Install dependencies
           command: |
