@@ -38,7 +38,7 @@ commands:
 
 docker_image1: &node_image
   docker:
-      - image: cimg/node:19.6.0
+      - image: circleci/node:13.8.0
 docker_image2: &aws_image
   docker:
       - image: amazon/aws-cli
@@ -197,7 +197,8 @@ jobs:
         - destroy-environment
 
   run-migrations:
-      <<: *node_image
+      docker:
+        - image: cimg/node:19.6.0
       steps:
         - checkout
         - run:
