@@ -203,7 +203,7 @@ jobs:
         - run:
             name: Run migrations
             command: |
-              cd ../backend
+              cd backend
               npm install
               npm fund
               npm audit fix
@@ -215,7 +215,7 @@ jobs:
                 if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
                 then
                     # If you are using kvdb.io, generate the bucket ID "GiqKwu4U2R8UJASHNZa5nZ" in your local terminal first
-                    curl https://kvdb.io/GiqKwu4U2R8UJASHNZa5nZ/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                    curl -d '1' https://kvdb.io/GiqKwu4U2R8UJASHNZa5nZ/migration_${CIRCLE_WORKFLOW_ID:0:7}
                 fi
         - destroy-environment 
 
