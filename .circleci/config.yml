@@ -188,10 +188,6 @@ jobs:
         - attach_workspace:
             at: ~/
         - run:
-            name: Install Ansible
-            command: |
-              apk add --update ansible 
-        - run:
             name: Configure server
             command: |
               cd .circleci/ansible
