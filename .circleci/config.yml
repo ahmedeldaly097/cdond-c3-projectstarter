@@ -1,14 +1,6 @@
 version: 2.1
 
 commands:
-  aws-install:
-      description: install aws cli on each image
-      steps:
-        - run:
-            name: install aws cli
-            command: |
-              sudo apt update
-              sudo apt install -y tar gzip awscli
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
       parameters:
@@ -22,7 +14,6 @@ commands:
             command: |
               aws cloudformation delete-stack --stack-name UdaPeople-backend-${workflow_id:0:5}
               aws cloudformation delete-stack --stack-name UdaPeople-frontend-${workflow_id:0:5}
-              aws s3 rb s3://UdaPeople-${workflow_id:0:5} --force
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
@@ -165,7 +156,7 @@ jobs:
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -192,14 +183,14 @@ jobs:
       - destroy-environment
 
   configure-infrastructure:
-      <<: *ansible_image
+      docker:
+        - image: mareimorsy/aws-node
       steps:
         - checkout
         - add_ssh_keys:
             fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
         - attach_workspace:
             at: ~/
-        - aws-install
         - run:
             name: Install Ansible
             command: |
@@ -208,21 +199,25 @@ jobs:
             name: Configure server
             command: |
               cd .circleci/ansible
+              aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory.txt
+              cat inventory.txt
               ansible-playbook -i inventory.txt configure-server.yml
         - destroy-environment
 
   run-migrations:
       docker:
-        - image: cimg/node:19.6.0
+        - image: mareimorsy/aws-node
       steps:
         - checkout
         - aws-install
         - run:
             name: Run migrations
             command: |
+              export TYPEORM_HOST=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
               cd backend
               npm install
               # Run and save the migration output
+              npm run premigrations
               npm run migrations > migrations_dump.txt
         - run:
             name: Send migration results to kvdb
@@ -235,14 +230,14 @@ jobs:
         - destroy-environment 
 
   deploy-frontend:
-    <<: *aws_image
+    docker:
+        - image: mareimorsy/aws-node
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - attach_workspace:
           at: ~/
-      - aws-install
       - run:
           name: Install dependencies
           working_directory: /tmp
@@ -271,7 +266,8 @@ jobs:
       - revert-migrations      
                     
   deploy-backend:
-    <<: *ansible_image
+    docker:
+        - image: mareimorsy/aws-node
     steps:
       - checkout
       - add_ssh_keys:
