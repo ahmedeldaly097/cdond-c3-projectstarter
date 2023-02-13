@@ -158,7 +158,6 @@ jobs:
     <<: *aws_image
     steps:
       - checkout
-      - aws-install
       - run:
           name: Ensure back-end infrastructure exists
           command: |
