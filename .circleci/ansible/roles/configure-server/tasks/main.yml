@@ -1,8 +1,8 @@
 ---
-- name: "update yum packages."
-  become: true
-  yum:
-    update_cache: true
+# - name: "update yum packages."
+#   become: true
+#   yum:
+#     update_cache: true
 
 - name: "upgrade packages."
   become: true
