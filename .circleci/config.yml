@@ -1,6 +1,25 @@
 version: 2.1
 
 commands:
+  install_ansible:
+      description: install ANSIBLE CLI v2
+      steps:
+        - run:
+            name: install ANSIBLE CLI v2
+            command: |
+              sudo apt update
+              sudo apt install software-properties-common -y
+              sudo add-apt-repository --yes --update ppa:ansible/ansible
+              sudo apt install ansible
+  install_nodejs:  
+      description: Install Node.js 13
+      steps:
+      - run:
+          name: Install Node.js 
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+            sudo apt install -y nodejs
+
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
       parameters:
@@ -185,10 +204,7 @@ jobs:
             fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
         - attach_workspace:
             at: ~/
-        - run:
-            name: Install Ansible
-            command: |
-              apk add --update ansible 
+        - install_ansible
         - run:
             name: Configure server
             command: |
@@ -205,17 +221,20 @@ jobs:
             command: |
               cd backend
               npm install
-              # Run and save the migration output
+              npm fund
+              npm audit fix
               npm run migrations > migrations_dump.txt
+              cat migrations_dump.txt
         - run:
-            name: Send migration results to memstash
+            name: Send migration results to kvdb
             command: |
                 if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
                 then
-                    # If you are using kvdb.io, generate the bucket ID "3zvnA1BmsLmoKbTxak1ayK" in your local terminal first
-                    curl https://kvdb.io/3zvnA1BmsLmoKbTxak1ayK/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                    # If you are using kvdb.io, generate the bucket ID "GiqKwu4U2R8UJASHNZa5nZ" in your local terminal first
+                    curl -d '1' https://kvdb.io/GiqKwu4U2R8UJASHNZa5nZ/migration_${CIRCLE_WORKFLOW_ID:0:7}
                 fi
-        - destroy-environment 
+        - destroy-environment
+        - revert-migrations
 
   deploy-frontend:
     <<: *aws_image
