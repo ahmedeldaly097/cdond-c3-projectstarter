@@ -38,10 +38,13 @@ commands:
 docker_image1: &node_image
   docker:
       - image: circleci/node:13.8.0
-docker_image2: &aws_image
+docker_image2: &aws-node_image
+  docker:
+      - image: mareimorsy/aws-node
+docker_image3: &aws_image
   docker:
       - image: amazon/aws-cli
-docker_image3: &ansible_image
+docker_image4: &ansible_image
   docker:
       - image: python:3.7-alpine3.16
 
@@ -52,7 +55,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      - aws-install
       - run:
           name: Build front-end
           command: |
@@ -69,7 +71,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
-      - aws-install
       - run:
           name: Back-end build
           command: |
@@ -86,7 +87,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      - aws-install
       - run:
           name: Run frontend test
           command: |
@@ -100,7 +100,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
-      - aws-install
       - run:
           name: Run Backend test
           command: |
@@ -123,7 +122,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      - aws-install
       - run:
           name: Run frontend scan
           command: |
@@ -137,7 +135,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
-      - aws-install
       - run:
           name: Run Backend scan
           command: |
@@ -183,8 +180,7 @@ jobs:
       - destroy-environment
 
   configure-infrastructure:
-      docker:
-        - image: mareimorsy/aws-node
+      <<: *aws-node_image
       steps:
         - checkout
         - add_ssh_keys:
@@ -205,8 +201,7 @@ jobs:
         - destroy-environment
 
   run-migrations:
-      docker:
-        - image: mareimorsy/aws-node
+      <<: *aws-node_image
       steps:
         - checkout
         - run:
@@ -229,22 +224,13 @@ jobs:
         - destroy-environment 
 
   deploy-frontend:
-    docker:
-        - image: mareimorsy/aws-node
+    <<: *aws-node_image
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - attach_workspace:
           at: ~/
-      - run:
-          name: Install dependencies
-          working_directory: /tmp
-          command: |
-            sudo apt-get update && sudo apt-get install -yy less
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
       - run:
           name: Get backend url
           command: |
@@ -265,8 +251,7 @@ jobs:
       - revert-migrations      
                     
   deploy-backend:
-    docker:
-        - image: mareimorsy/aws-node
+    <<: *aws-node_image
     steps:
       - checkout
       - add_ssh_keys:
@@ -275,19 +260,10 @@ jobs:
           at: ~/
       - restore_cache:
           keys: [backend-deps]
-      - aws-install
       - run:
             name: Install Ansible
             command: |
               apk add --update ansible
-      - run:
-          name: Install dependencies
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-            cd backend
-            npm install
       - run:
           name: Deploy backend
           command: |
