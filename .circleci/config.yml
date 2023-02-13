@@ -201,11 +201,6 @@ jobs:
       steps:
         - checkout
         - run:
-            name: fixing critical vulnerabilities
-            command: |
-              npm audit fix --audit-level=critical --force
-              npm audit --audit-level=critical
-        - run:
             name: Run migrations
             command: |
               cd backend
