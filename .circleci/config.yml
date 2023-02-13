@@ -146,11 +146,11 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text >> ansible/invetory.txt
+              --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: .circleci/ansible
+          root: ~/
           paths:
-            - inventory.txt
+            - /Projects/cdond-c3-projectstarter/.circleci/ansible/inventory.txt
       - destroy-environment
 
 
