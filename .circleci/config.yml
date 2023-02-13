@@ -25,7 +25,7 @@ docker_image2: &aws_image
       - image: amazon/aws-cli
 docker_image3: &ansible_image
   docker:
-      - image: python:3.7-alpine3.11
+      - image: python:3.7-alpine3.16
 
 jobs:
   build-frontend:
@@ -169,14 +169,12 @@ jobs:
         - run:
             name: Install Ansible and awscli
             command: |
-              pip install awscli
               apk add --update ansible
+              apk add --no-cache aws-cli
         - run:
             name: Configure server
             command: |
-              export  ANSIBLE_HOST_KEY_CHECKING=false
               cd .circleci/ansible
-              cat inventory.txt
               ansible-playbook -i inventory.txt configure-server.yml --private-key=~/.ssh/udacity.pem
         - destroy-environment:  
 
