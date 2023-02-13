@@ -169,8 +169,10 @@ jobs:
         - run:
             name: Install Ansible and awscli
             command: |
-              apk add --update ansible
-              apk add --no-cache aws-cli
+              Your code here
+              apk add --update ansible 
+              yum -y install tar gzip
+              npm install
         - run:
             name: Configure server
             command: |
