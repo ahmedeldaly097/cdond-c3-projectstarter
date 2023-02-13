@@ -158,28 +158,27 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
 
-configure-infrastructure:
-    docker:
+  configure-infrastructure:
       <<: *ansible_image
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Install Ansible and awscli
-          command: |
-            pip install awscli
-            apk add --update ansible
-      - run:
-          name: Configure server
-          command: |
-            export  ANSIBLE_HOST_KEY_CHECKING=false
-            cd .circleci/ansible
-            cat inventory.txt
-            ansible-playbook -i inventory.txt configure-server.yml --private-key=~/.ssh/udacity.pem
-      - destroy-environment:  
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
+        - attach_workspace:
+            at: ~/
+        - run:
+            name: Install Ansible and awscli
+            command: |
+              pip install awscli
+              apk add --update ansible
+        - run:
+            name: Configure server
+            command: |
+              export  ANSIBLE_HOST_KEY_CHECKING=false
+              cd .circleci/ansible
+              cat inventory.txt
+              ansible-playbook -i inventory.txt configure-server.yml --private-key=~/.ssh/udacity.pem
+        - destroy-environment:  
 
 workflows:
   default:
