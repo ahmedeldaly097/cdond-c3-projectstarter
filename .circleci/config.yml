@@ -1,6 +1,15 @@
 version: 2.1
 
 commands:
+  aws-install:
+      description: install aws cli on each image
+      steps:
+        - run:
+            name: install aws cli
+            command: |
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              sudo ./aws/install
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
       parameters:
@@ -53,6 +62,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - aws-install
       - run:
           name: Build front-end
           command: |
@@ -69,6 +79,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - aws-install
       - run:
           name: Back-end build
           command: |
@@ -85,6 +96,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - aws-install
       - run:
           name: Run frontend test
           command: |
@@ -98,6 +110,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - aws-install
       - run:
           name: Run Backend test
           command: |
@@ -120,6 +133,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - aws-install
       - run:
           name: Run frontend scan
           command: |
@@ -133,6 +147,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - aws-install
       - run:
           name: Run Backend scan
           command: |
@@ -144,6 +159,7 @@ jobs:
     <<: *aws_image
     steps:
       - checkout
+      - aws-install
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -185,6 +201,7 @@ jobs:
             fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
         - attach_workspace:
             at: ~/
+        - aws-install
         - run:
             name: Install Ansible
             command: |
@@ -201,6 +218,7 @@ jobs:
         - image: cimg/node:19.6.0
       steps:
         - checkout
+        - aws-install
         - run:
             name: Run migrations
             command: |
@@ -226,6 +244,7 @@ jobs:
           keys: [frontend-build]
       - attach_workspace:
           at: ~/
+      - aws-install
       - run:
           name: Install dependencies
           working_directory: /tmp
@@ -263,6 +282,7 @@ jobs:
           at: ~/
       - restore_cache:
           keys: [backend-deps]
+      - aws-install
       - run:
             name: Install Ansible & nodejs
             command: |
