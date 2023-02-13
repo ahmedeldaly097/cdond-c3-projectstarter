@@ -260,10 +260,10 @@ jobs:
           at: ~/
       - restore_cache:
           keys: [backend-deps]
-      # - run:
-      #       name: Install Ansible
-      #       command: |
-      #         apk add ansible
+      - run:
+            name: Install Ansible
+            command: |
+              apk add ansible
       - run:
           name: Deploy backend
           command: |
