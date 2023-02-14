@@ -227,6 +227,7 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl -d '1' https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997
                 fi
+                
         # - destroy-environment 
 
   deploy-frontend:
