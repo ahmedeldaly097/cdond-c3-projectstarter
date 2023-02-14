@@ -209,27 +209,19 @@ jobs:
               ansible-playbook -i inventory.txt configure-server.yml
 
   run-migrations:
-      <<: *aws-node_image
+      docker: 
+      - image: cimg/node:19.6.0
       steps:
         - checkout
-        - attach_workspace:
-            at: ~/
-        - restore_cache:
-              keys: [backend-build]
+        # - attach_workspace:
+        #     at: ~/
+        # - restore_cache:
+        #       keys: [backend-build]
         - run:
             name: Run migrations
             command: |
               cd backend
               npm install
-              npm run build
-              echo "TYPEORM_ENTITIES=./dist/modules/domain/**/*.entity{.ts,.js}" > .env
-              echo "TYPEORM_HOST=${TYPEORM_HOST}" >> .env
-              echo "TYPEORM_PORT=${TYPEORM_PORT}" >> .env
-              echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> .env
-              echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> .env
-              echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> .env
-              echo "TYPEORM_MIGRATIONS_DIR=./dist/migrations" >> .env
-              echo "TYPEORM_MIGRATIONS=./dist/migrations/*.ts" >> .env
               npm run migrations > migrations_dump.txt
         - run:
             name: Send migration results to kvdb
@@ -239,9 +231,6 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl -d '1' https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997
                 fi
-        - save_cache:
-            paths: [backend/node_modules]
-            key: backend-build
         # - destroy-environment 
 
   deploy-frontend:
