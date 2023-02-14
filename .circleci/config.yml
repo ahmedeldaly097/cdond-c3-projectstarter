@@ -223,6 +223,7 @@ jobs:
             command: |
               cd backend
               npm install
+              npm audit fix --force
               npm run build
               npm run migrations >> migrations_dump.txt
         - run:
@@ -260,10 +261,10 @@ jobs:
             tar -czvf artifact-"eldaly1997".tar.gz dist
             aws s3 cp dist s3://udapeople-eldaly1997 --recursive
       # - destroy-environment
-      - revert-migrations      
+      # - revert-migrations      
                     
   deploy-backend:
-    <<: *aws-node_image
+    <<: *ansible_image
     steps:
       - checkout
       - add_ssh_keys:
@@ -272,6 +273,10 @@ jobs:
           at: ~/
       - restore_cache:
           keys: [backend-deps]
+      - run:
+            name: Install Dependencies
+            command: |
+              apk add --update --no-cache tar gzip nodejs npm aws-cli curl
       - run:
           name: Deploy backend
           command: |
@@ -286,7 +291,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       # - destroy-environment
-      - revert-migrations 
+      # - revert-migrations 
 
 workflows:
   default:
