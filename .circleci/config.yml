@@ -8,8 +8,8 @@ commands:
             name: Destroy environments
             when: on_fail
             command: |
-              aws cloudformation delete-stack --stack-name udapeople-frontend-eldaly1997}
-              aws cloudformation delete-stack --stack-name udapeople-backend-eldaly1997}
+              aws cloudformation delete-stack --stack-name udapeople-frontend-eldaly1997
+              aws cloudformation delete-stack --stack-name udapeople-backend-eldaly1997
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -188,7 +188,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment
+      # - destroy-environment
 
   configure-infrastructure:
       <<: *ansible_image
@@ -234,7 +234,7 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl -d '1' https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997
                 fi
-        - destroy-environment 
+        # - destroy-environment 
 
   deploy-frontend:
     <<: *aws-node_image
@@ -260,7 +260,7 @@ jobs:
             npm run build
             tar -czvf artifact-"eldaly1997".tar.gz dist
             aws s3 cp dist s3://udapeople-eldaly1997 --recursive
-      - destroy-environment
+      # - destroy-environment
       - revert-migrations      
                     
   deploy-backend:
@@ -286,7 +286,7 @@ jobs:
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy-environment
+      # - destroy-environment
       - revert-migrations 
 
 workflows:
