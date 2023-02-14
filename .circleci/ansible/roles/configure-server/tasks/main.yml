@@ -18,4 +18,4 @@
     name: pm2
     global: yes
     production: yes
-    state: present
+    state: latest
