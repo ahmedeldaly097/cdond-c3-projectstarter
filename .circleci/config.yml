@@ -209,7 +209,7 @@ jobs:
               ansible-playbook -i inventory.txt configure-server.yml
 
   run-migrations:
-      <<: *node_image
+      <<: *aws-node_image
       steps:
         - checkout
         - run:
