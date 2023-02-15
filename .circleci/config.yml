@@ -23,15 +23,10 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
-            if(( $SUCCESS==1 )); 
-            then
-                cd ~/project/backend
-                npm install
-                Add revert code here. You can find this in the Getting Started section.
-              exit 1
-            fi
+            cd ~/project/backend
+            npm install
+            npm run build
+            npm run migrations:revert
 
 docker_image1: &node_image
   docker:
@@ -114,8 +109,6 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
             npm update js-yaml --depth 4
 
   scan-backend:
@@ -130,8 +123,6 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
             npm audit fix
             npm update path-parse --depth 3
 
@@ -184,7 +175,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # - destroy-environment
+      - destroy-environment
 
   configure-infrastructure:
       <<: *ansible_image
@@ -230,7 +221,7 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl --insecure https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997 -d '1'
                 fi
-        # - destroy-environment 
+        - destroy-environment 
 
   deploy-frontend:
     <<: *ansible_image
@@ -260,8 +251,8 @@ jobs:
             npm run build
             tar -czvf artifact-"eldaly1997".tar.gz dist
             aws s3 cp dist s3://udapeople-eldaly1997 --recursive
-      # - destroy-environment
-      # - revert-migrations      
+      - destroy-environment
+      - revert-migrations      
                     
   deploy-backend:
     <<: *ansible_image
@@ -288,8 +279,8 @@ jobs:
             cp artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/artifact.tar.gz
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # - destroy-environment
-      # - revert-migrations 
+      - destroy-environment
+      - revert-migrations 
 
   smoke-test:
     <<: *ansible_image
