@@ -116,6 +116,7 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+            npm update js-yaml --depth 4
 
   scan-backend:
     <<: *node_image
@@ -130,7 +131,8 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
+            npm audit --audit-level=
+            npm update path-parse --depth 3
 
   deploy-infrastructure:
     <<: *aws_image
