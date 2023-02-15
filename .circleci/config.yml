@@ -8,25 +8,29 @@ commands:
             name: Destroy environments
             when: on_fail
             command: |
-              aws cloudformation delete-stack --stack-name udapeople-frontend-eldaly1997
-              aws cloudformation delete-stack --stack-name udapeople-backend-eldaly1997
-              aws s3api delete-bucket --bucket udapeople-eldaly1997 --region us-east-1
+              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+              aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+              aws s3api delete-bucket --bucket udapeople-${CIRCLE_WORKFLOW_ID:0:7} --region us-east-1
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
       Workflow_ID:
         type: string
-        default: eldaly1997
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
-            cd ~/project/backend
-            npm install
-            npm run build
-            npm run migrations:revert
+            SUCCESS=$(curl --insecure  https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_${CIRCLE_WORKFLOW_ID:0:7}
+            # Logic for reverting the database state
+            if (( $SUCCESS == 1 ));
+            then
+                cd ~/project/backend
+                npm install
+                npm run migration:revert
+            fi  
 
 docker_image1: &node_image
   docker:
@@ -136,8 +140,8 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-backend-eldaly1997" \
-              --parameter-overrides ID="eldaly1997"
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
               exit_code=$?
               if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
                 then
@@ -151,8 +155,8 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-frontend-eldaly1997" \
-              --parameter-overrides ID="eldaly1997"
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
               exit_code=$?
               if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
                 then
@@ -168,7 +172,7 @@ jobs:
           command: |
             cd .circleci/ansible
             aws ec2 describe-instances \
-            --filters Name=tag:Name,Values="backend-eldaly1997" \
+            --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --query  'Reservations[*].Instances[*].PublicIpAddress' \
             --output text >> inventory.txt
       - persist_to_workspace:
@@ -219,7 +223,7 @@ jobs:
                 if grep -q "success" ~/project/backend/src/migrations.txt
                 then
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
-                    curl --insecure https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997 -d '1'
+                    curl --insecure https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
                 fi
         - destroy-environment 
 
@@ -238,7 +242,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-eldaly1997" --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -249,8 +253,8 @@ jobs:
             cd frontend
             npm install
             npm run build
-            tar -czvf artifact-"eldaly1997".tar.gz dist
-            aws s3 cp dist s3://udapeople-eldaly1997 --recursive
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
       - revert-migrations      
                     
@@ -295,7 +299,7 @@ jobs:
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-eldaly1997 \
+            --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
             --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo $API_URL
@@ -303,9 +307,26 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            export URL="http://udapeople-eldaly1997.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
+            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             echo $URL
             if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
+
+  cloudfront-update:
+    <<: *aws_image
+    steps:
+      - checkout
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name InitialStack \
+            --tags project=udapeople \
+            --parameter-overrides WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment
+      # - revert-migrations
+  
+
 
 workflows:
   default:
@@ -332,3 +353,7 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]

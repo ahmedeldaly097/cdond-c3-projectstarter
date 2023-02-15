@@ -10,7 +10,7 @@ Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "udapeople-eldaly1997"
+      BucketName: "udapeople-${CIRCLE_WORKFLOW_ID:0:7}"
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
