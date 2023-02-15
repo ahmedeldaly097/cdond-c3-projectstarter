@@ -302,30 +302,29 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-            --region us-east-1 \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters Name=tag:Name,Values="backend-eldaly1997" \
-            --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-eldaly1997" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
+            echo "ip: $API_URL"
+            if curl -s $API_URL/api/status | grep "ok"
             then
-                return 0
+              exit 0
             else
-                return 1
-            fi
+              exit 1
+            fi 
       - run:
           name: Frontend smoke test.
           command: |
-            URL="http://udapeople-eldaly1997.s3-website-us-east-1.amazonaws.com/#/employees"            
-            echo ${URL} 
-            if curl -s ${URL} | grep "Welcome"
+            URL=http://udapeople-eldaly1997.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com 
+            if curl -s $URL | grep "welcome"
+            echo "IP=$URL"
             then
-              return 1
+              exit 0
             else
-              return 1
-            fi
+              exit 1
+            fi  
 
 workflows:
   default:
@@ -342,6 +341,9 @@ workflows:
           requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
