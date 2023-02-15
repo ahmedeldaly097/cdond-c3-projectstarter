@@ -148,13 +148,13 @@ jobs:
               --tags project=udapeople \
               --stack-name "udapeople-backend-eldaly1997" \
               --parameter-overrides ID="eldaly1997"
-              exit_code=$?
-              if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
-                then
-                    exit 0
-                else
-                    exit 1
-                fi
+              # exit_code=$?
+              # if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
+              #   then
+              #       exit 0
+              #   else
+              #       exit 1
+              #   fi
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -163,13 +163,13 @@ jobs:
               --tags project=udapeople \
               --stack-name "udapeople-frontend-eldaly1997" \
               --parameter-overrides ID="eldaly1997"
-              exit_code=$?
-              if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
-                then
-                    exit 0
-                else
-                    exit 1
-                fi
+              # exit_code=$?
+              # if [[ $exit_code == 0  ||  $exit_code == 255 ]]; 
+              #   then
+              #       exit 0
+              #   else
+              #       exit 1
+              #   fi
       - run:
           name: install tar & gzip utility
           command: yum install -y tar gzip
