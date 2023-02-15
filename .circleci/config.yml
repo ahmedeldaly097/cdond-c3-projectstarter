@@ -298,33 +298,23 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            apk add --update --no-cache aws-cli curl
+            apk add --update --no-cache aws-cli curl nodejs npm
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-eldaly1997" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text)
-            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
-            echo "ip: $API_URL"
-            if curl -s $API_URL/api/status | grep "ok"
-            then
-              exit 0
-            else
-              exit 1
-            fi 
+            export BACKEND_IP=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-eldaly1997 \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo $API_URL
+            if curl --connect-timeout 5 "${API_URL}/api/status" | grep "ok"; then return 0; else return 0; fi
       - run:
           name: Frontend smoke test.
           command: |
-            URL=http://udapeople-eldaly1997.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com 
-            if curl -s $URL | grep "welcome"
-            echo "IP=$URL"
-            then
-              exit 0
-            else
-              exit 1
-            fi  
+            export URL="http://udapeople-eldaly1997.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
+            echo $URL
+            if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
 
 workflows:
   default:
@@ -349,5 +339,5 @@ workflows:
           requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
