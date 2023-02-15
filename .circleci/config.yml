@@ -233,7 +233,7 @@ jobs:
         - destroy-environment 
 
   deploy-frontend:
-    <<: *node_image
+    <<: *ansible_image
     steps:
       - checkout
       - restore_cache:
