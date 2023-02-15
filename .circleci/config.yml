@@ -35,9 +35,6 @@ commands:
 docker_image1: &node_image
   docker:
       - image: circleci/node:13.8.0
-docker_image2: &aws-node_image
-  docker:
-      - image: mareimorsy/aws-node
 docker_image3: &aws_image
   docker:
       - image: amazon/aws-cli
@@ -188,7 +185,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # - destroy-environment
+      - destroy-environment
 
   configure-infrastructure:
       <<: *ansible_image
@@ -233,16 +230,20 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl -d '1' https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997
                 fi
-        # - destroy-environment 
+        - destroy-environment 
 
   deploy-frontend:
-    <<: *aws-node_image
+    <<: *node_image
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - attach_workspace:
           at: ~/
+      - run:
+            name: Install Dependencies
+            command: |
+              apk add --update --no-cache tar gzip nodejs npm aws-cli curl
       - run:
           name: Get backend url
           command: |
@@ -259,8 +260,8 @@ jobs:
             npm run build
             tar -czvf artifact-"eldaly1997".tar.gz dist
             aws s3 cp dist s3://udapeople-eldaly1997 --recursive
-      # - destroy-environment
-      # - revert-migrations      
+      - destroy-environment
+      - revert-migrations      
                     
   deploy-backend:
     <<: *ansible_image
@@ -287,8 +288,48 @@ jobs:
             cp artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/artifact.tar.gz
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # - destroy-environment
-      # - revert-migrations 
+      - destroy-environment
+      - revert-migrations 
+
+  smoke-test:
+    <<: *ansible_image
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            apk add --update --no-cache aws-cli curl
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            --region us-east-1 \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters Name=tag:Name,Values="backend-eldaly1997" \
+            --output text)
+      - run:
+          name: Backend smoke test.
+          command: |
+            export BACKEND_PUBLIC_IP=$(tail ~/project/.circleci/ansible/inventory.txt)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-eldaly1997.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 1
+            else
+              return 1
+            fi
 
 workflows:
   default:
