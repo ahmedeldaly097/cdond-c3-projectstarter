@@ -102,15 +102,6 @@ jobs:
             npm install
             npm run build
 
-  fixing-critical-vulnerabilities:
-    <<: *node_image
-    steps:
-      - run:
-          name: fixing critical vulnerabilities
-          command: |
-            npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
-
   scan-frontend:
     <<: *node_image
     steps:
