@@ -132,7 +132,7 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=
-            npm update path-parse --depth 3
+            npm audit fix
 
   deploy-infrastructure:
     <<: *aws_image
