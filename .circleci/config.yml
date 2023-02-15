@@ -10,14 +10,10 @@ commands:
             command: |
               aws cloudformation delete-stack --stack-name udapeople-frontend-eldaly1997
               aws cloudformation delete-stack --stack-name udapeople-backend-eldaly1997
-              aws s3api delete-bucket --bucket udapeople-eldaly1997 --region us-east-1
+              aws s3 rm s3://udapeople-eldaly1997 --recursive
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
-    parameters:
-      Workflow_ID:
-        type: string
-        default: eldaly1997
     steps:
       - run:
           name: Revert migrations
@@ -306,6 +302,8 @@ jobs:
             export URL="http://udapeople-eldaly1997.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             echo $URL
             if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
+
+
 
 workflows:
   default:
