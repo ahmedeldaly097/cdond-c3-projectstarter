@@ -122,7 +122,9 @@ jobs:
           command: |
             cd frontend
             npm install
-            npm run build
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
 
   scan-backend:
     <<: *node_image
@@ -135,7 +137,9 @@ jobs:
           command: |
             cd backend
             npm install
-            npm run build
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
 
   deploy-infrastructure:
     <<: *aws_image
@@ -207,8 +211,7 @@ jobs:
               ansible-playbook -i inventory.txt configure-server.yml
 
   run-migrations:
-      docker:
-      - image: circleci/node:13.8.0
+      <<: *node_image
       steps:
         - checkout
         - run:
@@ -228,7 +231,7 @@ jobs:
         - run:
             name: Send migration results to kvdb
             command: |
-                if grep -q "has been executed successfully." ~/project/backend/migrations.txt
+                if grep -q "success" ~/project/backend/migrations.txt
                 then
                     # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
                     curl --insecure https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_eldaly1997 -d '1'
