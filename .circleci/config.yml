@@ -352,15 +352,15 @@ jobs:
       - run:
           name: Retrieve Previous Workflow ID from kvdb.io
           command: |
-            PREV_KEY=$(curl --silent \
+            export PREV_KEY=$(curl --silent \
               --request GET \
               --url https://kvdb.io/${KVDB_BUCKET}/?prefix=workflow_id_ \
               --header 'content-type: application/json' | jq -r '.items[-2].key')
             if [[ -z "${PREV_KEY}" ]]; then
               echo "No previous runs found in kvdb.io"
-              PREV_TIMESTAMP="2023-02-15T14:30:00Z"
+              PREV_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             else
-              PREV_WORKFLOW_ID=$(curl --silent \
+              export PREV_WORKFLOW_ID=$(curl --silent \
                 --request GET \
                 --url https://kvdb.io/${KVDB_BUCKET}/${PREV_KEY} \
                 --header 'content-type: application/json' | jq -r '.workflow_id')
