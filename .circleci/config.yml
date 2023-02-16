@@ -169,7 +169,7 @@ jobs:
             aws ec2 describe-instances \
             --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --query  'Reservations[*].Instances[*].PublicIpAddress' \
-            --output text >> inventory.txt
+            --output text >> ~/project/.circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -191,6 +191,18 @@ jobs:
         - run:
             name: Configure server
             command: |
+              # add environment variables to server
+              echo ENVIRONMENT=production > backend/.env
+              echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
+              echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
+              echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
+              echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
+              echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
+              echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
+              echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
+              echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
+              echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
+              cat backend/.env
               cd .circleci/ansible
               ansible-playbook -i inventory.txt configure-server.yml
 
@@ -238,7 +250,10 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -272,11 +287,12 @@ jobs:
           name: Deploy backend
           command: |
             cd backend
-            npm i
+            npm install
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-            cp artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/artifact.tar.gz
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
@@ -341,47 +357,6 @@ jobs:
               --header 'content-type: application/json' \
               --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
   
-  # cleanup:
-  #   <<: *ansible_image
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Install Dependencies
-  #         command: |
-  #           apk add --update --no-cache aws-cli curl jq
-  #     - run:
-  #         name: Retrieve Previous Workflow ID from kvdb.io
-  #         command: |
-  #           export PREV_KEY=$(curl --silent \
-  #             --request GET \
-  #             --url https://kvdb.io/${KVDB_BUCKET}/?prefix=workflow_id_ \
-  #             --header 'content-type: application/json' | jq -r '.items[-2].key')
-  #           if [[ -z "${PREV_KEY}" ]]; then
-  #             echo "No previous runs found in kvdb.io"
-  #             PREV_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  #           else
-  #             export PREV_WORKFLOW_ID=$(curl --silent \
-  #               --request GET \
-  #               --url https://kvdb.io/${KVDB_BUCKET}/${PREV_KEY} \
-  #               --header 'content-type: application/json' | jq -r '.workflow_id')
-  #             PREV_TIMESTAMP=$(echo ${PREV_KEY} | cut -d'_' -f2-)
-  #             echo "Retrieved Previous Workflow ID: ${PREV_WORKFLOW_ID}"
-  #             echo "Retrieved Previous Timestamp: ${PREV_TIMESTAMP}"
-  #           fi
-  #     - run:
-  #         name: Remove old stacks and S3 bucket
-  #         command: |
-  #           export STACKS=$(aws cloudformation list-stacks \
-  #               --query "StackSummaries[*].StackName" \
-  #               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-  #           echo Stack names: "${STACKS[@]}"
-            
-  #           if [[ "${STACKS[@]}" =~ "${PREV_WORKFLOW_ID}" ]]
-  #           then
-  #             aws s3 rm "s3://udapeople-${PREV_WORKFLOW_ID}" --recursive
-  #             aws cloudformation delete-stack --stack-name "backend-${PREV_WORKFLOW_ID}"
-  #             aws cloudformation delete-stack --stack-name "frontend-${PREV_WORKFLOW_ID}"
-  #           fi
 
 workflows:
   default:
@@ -411,5 +386,3 @@ workflows:
       - cloudfront-update
       - save-old-workflow-id-to-kvdb:
           requires: [smoke-test, cloudfront-update]
-      # - cleanup:
-      #     requires: [save-old-workflow-id-to-kvdb]
