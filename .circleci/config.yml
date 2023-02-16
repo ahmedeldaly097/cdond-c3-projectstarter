@@ -342,9 +342,13 @@ jobs:
               --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
   
   cleanup:
-    <<: *aws_image
+    <<: *ansible_image
     steps:
       - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            apk add --update --no-cache aws-cli curl jq
       - run:
           name: Retrieve Previous Workflow ID from kvdb.io
           command: |
