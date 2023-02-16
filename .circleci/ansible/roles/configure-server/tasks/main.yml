@@ -1,21 +1,24 @@
 ---
-
-- name: "upgrade packages."
+- name: 'update and upgrade packages.'
   become: true
   apt:
-    upgrade: "yes"
-
-- name: "install nodejs and npm"
+    upgrade: true
+    update_cache: true
+    cache_valid_time: 86400
+- name: remove unneeded deps
   become: true
   apt:
-    name: ["nodejs", "npm"]
+    autoremove: true
+- name: install deps
+  become: true
+  apt:
+    name: ['nodejs', 'npm']
     state: latest
-    update_cache: yes
-
-- name: "install pm2"
+    update_cache: true
+- name: install pm2
   become: true
   npm:
     name: pm2
-    global: yes
-    production: yes
+    global: true
     state: latest
+    production: true
