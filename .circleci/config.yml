@@ -417,4 +417,4 @@ workflows:
       # - save-old-workflow-id-to-kvdb:
       #     requires: [smoke-test, cloudfront-update]
       - cleanup:
-          requires: [cloudfront-update]
+          requires: [cloudfront-update, smoke-test]
