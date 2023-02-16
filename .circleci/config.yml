@@ -334,12 +334,36 @@ jobs:
             --no-paginate --output text)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-            curl -k https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OldWorkflowID}"
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            KEY="workflow_id_${TIMESTAMP}"
+            curl --request PUT \
+              --url https://kvdb.io/${KVDB_BUCKET}/${KEY} \
+              --header 'content-type: application/json' \
+              --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
   
   cleanup:
     <<: *aws_image
     steps:
       - checkout
+      - run:
+          name: Retrieve Previous Workflow ID from kvdb.io
+          command: |
+            PREV_KEY=$(curl --silent \
+              --request GET \
+              --url https://kvdb.io/${KVDB_BUCKET}/?prefix=workflow_id_ \
+              --header 'content-type: application/json' | jq -r '.items[-2].key')
+            if [[ -z "${PREV_KEY}" ]]; then
+              echo "No previous runs found in kvdb.io"
+              PREV_TIMESTAMP="2023-02-15T14:30:00Z"
+            else
+              PREV_WORKFLOW_ID=$(curl --silent \
+                --request GET \
+                --url https://kvdb.io/${KVDB_BUCKET}/${PREV_KEY} \
+                --header 'content-type: application/json' | jq -r '.workflow_id')
+              PREV_TIMESTAMP=$(echo ${PREV_KEY} | cut -d'_' -f2-)
+              echo "Retrieved Previous Workflow ID: ${PREV_WORKFLOW_ID}"
+              echo "Retrieved Previous Timestamp: ${PREV_TIMESTAMP}"
+            fi
       - run:
           name: Remove old stacks and S3 bucket
           command: |
@@ -347,13 +371,12 @@ jobs:
                 --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
-            echo Old Workflow ID: $OldWorkflowID
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            
+            if [[ "${STACKS[@]}" =~ "${PREV_WORKFLOW_ID}" ]]
             then
-              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
-              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
+              aws s3 rm "s3://udapeople-${PREV_WORKFLOW_ID}" --recursive
+              aws cloudformation delete-stack --stack-name "backend-${PREV_WORKFLOW_ID}"
+              aws cloudformation delete-stack --stack-name "frontend-${PREV_WORKFLOW_ID}"
             fi
 
 workflows:
