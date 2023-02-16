@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@1.4.0
+
 commands:
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -215,8 +218,8 @@ jobs:
             command: |
                 if grep -q "SELECT" ~/project/backend/src/migrations.txt
                 then
-                    # If you are using kvdb.io, generate the bucket ID "38jXFhxqqptSJwGCouw15G" in your local terminal first
-                    curl --insecure https://kvdb.io/38jXFhxqqptSJwGCouw15G/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
+                    # If you are using kvdb.io, generate the bucket ID "${KVDB_BUCKET}" in your local terminal first
+                    curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d 'success'
                 fi
         - destroy-environment 
 
@@ -319,6 +322,40 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+  save-old-workflow-id-to-kvdb:
+    <<: *aws_image
+    steps:
+      - checkout
+      - run:
+          name: Save Old Workflow ID to kvdb.io
+          command: |
+            export OldWorkflowID=$(aws cloudformation \
+            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+            --no-paginate --output text)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+            curl -k https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OldWorkflowID}"
+  
+  cleanup:
+    <<: *aws_image
+    steps:
+      - checkout
+      - run:
+          name: Remove old stacks and S3 bucket
+          command: |
+            export STACKS=($(aws cloudformation list-stacks \
+                --query "StackSummaries[*].StackName" \
+                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo Stack names: "${STACKS[@]}"
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
+            echo Old Workflow ID: $OldWorkflowID
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
+            fi
+
 workflows:
   default:
     jobs:
@@ -346,3 +383,7 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
+      - save-old-workflow-id-to-kvdb:
+          requires: [smoke-test, cloudfront-update]
+      - cleanup:
+          requires: [save-old-workflow-id-to-kvdb]
