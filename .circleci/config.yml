@@ -341,47 +341,47 @@ jobs:
               --header 'content-type: application/json' \
               --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
   
-  cleanup:
-    <<: *ansible_image
-    steps:
-      - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            apk add --update --no-cache aws-cli curl jq
-      - run:
-          name: Retrieve Previous Workflow ID from kvdb.io
-          command: |
-            export PREV_KEY=$(curl --silent \
-              --request GET \
-              --url https://kvdb.io/${KVDB_BUCKET}/?prefix=workflow_id_ \
-              --header 'content-type: application/json' | jq -r '.items[-2].key')
-            if [[ -z "${PREV_KEY}" ]]; then
-              echo "No previous runs found in kvdb.io"
-              PREV_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            else
-              export PREV_WORKFLOW_ID=$(curl --silent \
-                --request GET \
-                --url https://kvdb.io/${KVDB_BUCKET}/${PREV_KEY} \
-                --header 'content-type: application/json' | jq -r '.workflow_id')
-              PREV_TIMESTAMP=$(echo ${PREV_KEY} | cut -d'_' -f2-)
-              echo "Retrieved Previous Workflow ID: ${PREV_WORKFLOW_ID}"
-              echo "Retrieved Previous Timestamp: ${PREV_TIMESTAMP}"
-            fi
-      - run:
-          name: Remove old stacks and S3 bucket
-          command: |
-            export STACKS=$(aws cloudformation list-stacks \
-                --query "StackSummaries[*].StackName" \
-                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            echo Stack names: "${STACKS[@]}"
+  # cleanup:
+  #   <<: *ansible_image
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install Dependencies
+  #         command: |
+  #           apk add --update --no-cache aws-cli curl jq
+  #     - run:
+  #         name: Retrieve Previous Workflow ID from kvdb.io
+  #         command: |
+  #           export PREV_KEY=$(curl --silent \
+  #             --request GET \
+  #             --url https://kvdb.io/${KVDB_BUCKET}/?prefix=workflow_id_ \
+  #             --header 'content-type: application/json' | jq -r '.items[-2].key')
+  #           if [[ -z "${PREV_KEY}" ]]; then
+  #             echo "No previous runs found in kvdb.io"
+  #             PREV_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  #           else
+  #             export PREV_WORKFLOW_ID=$(curl --silent \
+  #               --request GET \
+  #               --url https://kvdb.io/${KVDB_BUCKET}/${PREV_KEY} \
+  #               --header 'content-type: application/json' | jq -r '.workflow_id')
+  #             PREV_TIMESTAMP=$(echo ${PREV_KEY} | cut -d'_' -f2-)
+  #             echo "Retrieved Previous Workflow ID: ${PREV_WORKFLOW_ID}"
+  #             echo "Retrieved Previous Timestamp: ${PREV_TIMESTAMP}"
+  #           fi
+  #     - run:
+  #         name: Remove old stacks and S3 bucket
+  #         command: |
+  #           export STACKS=$(aws cloudformation list-stacks \
+  #               --query "StackSummaries[*].StackName" \
+  #               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+  #           echo Stack names: "${STACKS[@]}"
             
-            if [[ "${STACKS[@]}" =~ "${PREV_WORKFLOW_ID}" ]]
-            then
-              aws s3 rm "s3://udapeople-${PREV_WORKFLOW_ID}" --recursive
-              aws cloudformation delete-stack --stack-name "backend-${PREV_WORKFLOW_ID}"
-              aws cloudformation delete-stack --stack-name "frontend-${PREV_WORKFLOW_ID}"
-            fi
+  #           if [[ "${STACKS[@]}" =~ "${PREV_WORKFLOW_ID}" ]]
+  #           then
+  #             aws s3 rm "s3://udapeople-${PREV_WORKFLOW_ID}" --recursive
+  #             aws cloudformation delete-stack --stack-name "backend-${PREV_WORKFLOW_ID}"
+  #             aws cloudformation delete-stack --stack-name "frontend-${PREV_WORKFLOW_ID}"
+  #           fi
 
 workflows:
   default:
@@ -411,5 +411,5 @@ workflows:
       - cloudfront-update
       - save-old-workflow-id-to-kvdb:
           requires: [smoke-test, cloudfront-update]
-      - cleanup:
-          requires: [save-old-workflow-id-to-kvdb]
+      # - cleanup:
+      #     requires: [save-old-workflow-id-to-kvdb]
