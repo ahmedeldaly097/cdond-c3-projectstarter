@@ -381,8 +381,7 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
+      - cloudfront-update
       - save-old-workflow-id-to-kvdb:
           requires: [smoke-test, cloudfront-update]
       - cleanup:
