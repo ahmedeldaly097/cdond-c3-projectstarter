@@ -358,34 +358,30 @@ jobs:
   #             --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
   
   cleanup:
-      <<: *ansible_image
+      <<: *aws_image
       steps:
         - checkout
         - run:
-            name: Install Dependencies
-            command: |
-              apk add --update --no-cache aws-cli curl
-        - run:
             name: Get old stack workflow id
             command: |
-              # Fetch the Old workflow ID
+              echo ${CIRCLE_WORKFLOW_ID:0:7}
               export OldWorkflowID=$(aws cloudformation \
-                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                      --no-paginate --output text)
-              echo OldWorkflowID: "${OldWorkflowID}"
-              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-              # Fetch the stack names          
-              export STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                      --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
-              echo Stack names: "${STACKS[@]}"
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+              export STACKS=$(aws cloudformation list-stacks \
+              --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
         - run:
             name: Remove old stacks and files
             command: |
               if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
               then
+                echo "----------cleaning up stacks------------"
                 aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
                 aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
                 aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              else
+                echo "----------can not updated---------------"
               fi
 
 workflows:
