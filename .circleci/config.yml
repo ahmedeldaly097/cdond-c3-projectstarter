@@ -375,7 +375,7 @@ jobs:
               echo OldWorkflowID: "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
               # Fetch the stack names          
-              export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              export STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                       --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
               echo Stack names: "${STACKS[@]}"
         - run:
@@ -416,5 +416,4 @@ workflows:
       - cloudfront-update
       # - save-old-workflow-id-to-kvdb:
       #     requires: [smoke-test, cloudfront-update]
-      - cleanup:
-          requires: [cloudfront-update, smoke-test]
+      - cleanup
