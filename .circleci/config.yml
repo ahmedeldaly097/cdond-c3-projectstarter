@@ -356,7 +356,7 @@ jobs:
   #             --url https://kvdb.io/${KVDB_BUCKET}/${KEY} \
   #             --header 'content-type: application/json' \
   #             --data-raw '{"workflow_id":"'""${OldWorkflowID}""'"}'
-  
+
   cleanup:
       <<: *aws_image
       steps:
