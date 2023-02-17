@@ -325,6 +325,15 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Save Old Workflow ID
+          command: |
+            export OLD_CIRCLE_WORKFLOW_ID=$(aws cloudformation list-exports \
+                --query "Exports[?Name=='WorkflowID'].Value" --output text)
+            echo OLD_CIRCLE_WORKFLOW_ID=${OLD_CIRCLE_WORKFLOW_ID}
+            export STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+                --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE --output text)
+            echo STACKS=${STACKS}
+      - run:
           name: Update cloudfront distribution
           command: |
             aws cloudformation deploy \
@@ -342,12 +351,6 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            OLD_CIRCLE_WORKFLOW_ID=$(aws cloudformation list-exports \
-                --query "Exports[?Name=='CircleCI-WorkflowID'].Value" --output text)
-            echo OLD_CIRCLE_WORKFLOW_ID=${OLD_CIRCLE_WORKFLOW_ID}
-            STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE --output text)
-            echo STACKS=${STACKS}
             if [ -n "${OLD_CIRCLE_WORKFLOW_ID}" ] && [[ "${STACKS[@]}" =~ "${OLD_CIRCLE_WORKFLOW_ID}" ]]
             then
               aws s3 rm s3://udapeople-s3bucket-${OLD_CIRCLE_WORKFLOW_ID}/ --recursive
@@ -382,4 +385,4 @@ workflows:
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
       - cleanup:
-          requires: [smoke-test]
+          requires: [smoke-test, cloudfront-update]
