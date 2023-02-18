@@ -1,5 +1,8 @@
 version: 2.1
 
+environment:
+    OLD_CIRCLE_WORKFLOW_ID: ""
+
 commands:
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -348,7 +351,8 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            aws s3 rm s3://udapeople-${OLD_CIRCLE_WORKFLOW_ID}/ --recursive
+            echo OLD_CIRCLE_WORKFLOW_ID=${OLD_CIRCLE_WORKFLOW_ID}
+            aws s3 rb s3://udapeople-${OLD_CIRCLE_WORKFLOW_ID} --force  
             aws cloudformation delete-stack --stack-name udapeople-frontend-${OLD_CIRCLE_WORKFLOW_ID}
             aws cloudformation delete-stack --stack-name udapeople-backend-${OLD_CIRCLE_WORKFLOW_ID}
             
