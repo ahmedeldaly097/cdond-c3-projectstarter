@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.12.1
+  slack: circleci/slack@4.3.0
 
 commands:
   destroy-environment:
@@ -14,7 +14,6 @@ commands:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
               aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
               aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --force
-
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
@@ -26,6 +25,16 @@ commands:
             npm install
             npm run build
             npm run migrations:revert
+  notify_slack_error:
+    steps:
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+  notify_slack_pass:
+    steps:
+      - slack/notify:
+          event: pass
+          template: basic_success_1
 
 docker_image1: &node_image
   docker:
@@ -53,6 +62,8 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - notify_slack_error
+      - notify_slack_pass
 
   build-backend:
     <<: *node_image
@@ -69,6 +80,8 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - notify_slack_error
+      - notify_slack_pass
 
   test-frontend:
     <<: *node_image
@@ -82,7 +95,9 @@ jobs:
             cd frontend
             npm install
             npm run build
-                
+      - notify_slack_error
+      - notify_slack_pass
+
   test-backend:
     <<: *node_image
     steps:
@@ -95,6 +110,8 @@ jobs:
             cd backend
             npm install
             npm run build
+      - notify_slack_error
+      - notify_slack_pass
 
   scan-frontend:
     <<: *node_image
@@ -109,6 +126,8 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm update js-yaml --depth 4
+      - notify_slack_error
+      - notify_slack_pass
 
   scan-backend:
     <<: *node_image
@@ -124,6 +143,8 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix
             npm update path-parse --depth 3
+      - notify_slack_error
+      - notify_slack_pass
 
   deploy-infrastructure:
     <<: *aws_image
@@ -175,6 +196,8 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
+      - notify_slack_error
+      - notify_slack_pass
 
   configure-infrastructure:
       <<: *ansible_image
@@ -205,6 +228,8 @@ jobs:
               cat backend/.env
               cd .circleci/ansible
               ansible-playbook -i inventory.txt configure-server.yml
+        - notify_slack_error
+        - notify_slack_pass
 
   run-migrations:
       <<: *node_image
@@ -234,6 +259,8 @@ jobs:
                     curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d 'success'
                 fi
         - destroy-environment 
+        - notify_slack_error
+        - notify_slack_pass
 
   deploy-frontend:
     <<: *ansible_image
@@ -267,7 +294,9 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
-      - revert-migrations      
+      - revert-migrations    
+      - notify_slack_error
+      - notify_slack_pass  
                     
   deploy-backend:
     <<: *ansible_image
@@ -297,6 +326,8 @@ jobs:
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
       - revert-migrations 
+      - notify_slack_error
+      - notify_slack_pass
 
   smoke-test:
     <<: *ansible_image
@@ -322,6 +353,8 @@ jobs:
             export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             echo $URL
             if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
+      - notify_slack_error
+      - notify_slack_pass
 
   cloudfront-update:
     <<: *aws_image
@@ -344,6 +377,8 @@ jobs:
             --tags project=udapeople
       - destroy-environment
       - revert-migrations
+      - notify_slack_error
+      - notify_slack_pass
 
   cleanup:
     <<: *aws_image
@@ -364,6 +399,8 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OLD_CIRCLE_WORKFLOW_ID}
               aws cloudformation delete-stack --stack-name udapeople-backend-${OLD_CIRCLE_WORKFLOW_ID}
             fi
+      - notify_slack_error
+      - notify_slack_pass
       
 workflows:
   default:
