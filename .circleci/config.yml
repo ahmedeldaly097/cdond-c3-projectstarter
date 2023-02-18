@@ -1,8 +1,5 @@
 version: 2.1
 
-environment:
-    OLD_CIRCLE_WORKFLOW_ID: ""
-
 commands:
   destroy-environment:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -333,6 +330,7 @@ jobs:
             export OLD_CIRCLE_WORKFLOW_ID=$(aws cloudformation list-exports \
                 --query "Exports[?Name=='WorkflowID'].Value" --output text)
             echo OLD_CIRCLE_WORKFLOW_ID=${OLD_CIRCLE_WORKFLOW_ID}
+            curl -k https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OLD_CIRCLE_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -351,6 +349,7 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
+            export OLD_CIRCLE_WORKFLOW_ID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
             echo OLD_CIRCLE_WORKFLOW_ID=${OLD_CIRCLE_WORKFLOW_ID}
             aws s3 rb s3://udapeople-${OLD_CIRCLE_WORKFLOW_ID} --force  
             aws cloudformation delete-stack --stack-name udapeople-frontend-${OLD_CIRCLE_WORKFLOW_ID}
