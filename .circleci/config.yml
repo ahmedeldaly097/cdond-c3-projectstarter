@@ -62,8 +62,6 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
-      - notify_slack_error
-      - notify_slack_pass
 
   build-backend:
     <<: *node_image
@@ -80,8 +78,6 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-      - notify_slack_error
-      - notify_slack_pass
 
   test-frontend:
     <<: *node_image
@@ -95,8 +91,6 @@ jobs:
             cd frontend
             npm install
             npm run build
-      - notify_slack_error
-      - notify_slack_pass
 
   test-backend:
     <<: *node_image
@@ -110,8 +104,6 @@ jobs:
             cd backend
             npm install
             npm run build
-      - notify_slack_error
-      - notify_slack_pass
 
   scan-frontend:
     <<: *node_image
@@ -126,8 +118,6 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm update js-yaml --depth 4
-      - notify_slack_error
-      - notify_slack_pass
 
   scan-backend:
     <<: *node_image
@@ -143,8 +133,6 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix
             npm update path-parse --depth 3
-      - notify_slack_error
-      - notify_slack_pass
 
   deploy-infrastructure:
     <<: *aws_image
@@ -196,8 +184,6 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
-      - notify_slack_error
-      - notify_slack_pass
 
   configure-infrastructure:
       <<: *ansible_image
@@ -228,8 +214,6 @@ jobs:
               cat backend/.env
               cd .circleci/ansible
               ansible-playbook -i inventory.txt configure-server.yml
-        - notify_slack_error
-        - notify_slack_pass
 
   run-migrations:
       <<: *node_image
@@ -258,9 +242,7 @@ jobs:
                     # If you are using kvdb.io, generate the bucket ID "${KVDB_BUCKET}" in your local terminal first
                     curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d 'success'
                 fi
-        - destroy-environment 
-        - notify_slack_error
-        - notify_slack_pass
+        - destroy-environment
 
   deploy-frontend:
     <<: *ansible_image
@@ -294,9 +276,7 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
-      - revert-migrations    
-      - notify_slack_error
-      - notify_slack_pass  
+      - revert-migrations
                     
   deploy-backend:
     <<: *ansible_image
@@ -325,9 +305,7 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
-      - revert-migrations 
-      - notify_slack_error
-      - notify_slack_pass
+      - revert-migrations
 
   smoke-test:
     <<: *ansible_image
@@ -354,7 +332,6 @@ jobs:
             echo $URL
             if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
       - notify_slack_error
-      - notify_slack_pass
 
   cloudfront-update:
     <<: *aws_image
@@ -377,8 +354,6 @@ jobs:
             --tags project=udapeople
       - destroy-environment
       - revert-migrations
-      - notify_slack_error
-      - notify_slack_pass
 
   cleanup:
     <<: *aws_image
@@ -399,9 +374,7 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OLD_CIRCLE_WORKFLOW_ID}
               aws cloudformation delete-stack --stack-name udapeople-backend-${OLD_CIRCLE_WORKFLOW_ID}
             fi
-      - notify_slack_error
-      - notify_slack_pass
-      
+
 workflows:
   default:
     jobs:
