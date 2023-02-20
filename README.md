@@ -17,7 +17,6 @@
 
 ### Project Submission
 
-
 For your submission, please submit the following:
 
 - A text file named `urls.txt` including:
