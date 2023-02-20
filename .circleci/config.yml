@@ -378,7 +378,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - cloudfront-update
       - build-frontend
       - build-backend
       - test-frontend:
