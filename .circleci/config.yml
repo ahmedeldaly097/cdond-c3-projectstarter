@@ -25,16 +25,6 @@ commands:
             npm install
             npm run build
             npm run migrations:revert
-  notify_slack_error:
-    steps:
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-  notify_slack_pass:
-    steps:
-      - slack/notify:
-          event: pass
-          template: basic_success_1
 
 docker_image1: &node_image
   docker:
@@ -184,6 +174,7 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
+      - revert-migrations
 
   configure-infrastructure:
       <<: *ansible_image
@@ -214,6 +205,8 @@ jobs:
               cat backend/.env
               cd .circleci/ansible
               ansible-playbook -i inventory.txt configure-server.yml
+        - destroy-environment
+        - revert-migrations
 
   run-migrations:
       <<: *node_image
@@ -243,6 +236,7 @@ jobs:
                     curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d 'success'
                 fi
         - destroy-environment
+        - revert-migrations
 
   deploy-frontend:
     <<: *ansible_image
@@ -330,8 +324,9 @@ jobs:
           command: |
             export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             echo $URL
-            if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi 
-      - notify_slack_error
+            if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi
+      - destroy-environment
+      - revert-migrations
 
   cloudfront-update:
     <<: *aws_image
