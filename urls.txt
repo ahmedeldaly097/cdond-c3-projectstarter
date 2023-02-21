@@ -1,0 +1,5 @@
+1. Public Url to GitHub repository (not private) [URL01]
+	https://github.com/ahmedeldaly097/cdond-c3-projectstarter
+
+2. Public URL for your S3 Bucket (aka, your front-end). [URL02]
+	http://udapeople-4eebf71.s3-website-us-east-1.amazonaws.com
