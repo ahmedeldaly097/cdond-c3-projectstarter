@@ -25,6 +25,16 @@ commands:
             npm install
             npm run build
             npm run migrations:revert
+  notify_slack_error:
+    steps:
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+  notify_slack_pass:
+    steps:
+      - slack/notify:
+          event: pass
+          template: basic_success_1
 
 docker_image1: &node_image
   docker:
@@ -124,6 +134,8 @@ jobs:
             # npm audit fix --audit-level=critical --force
             # npm audit fix
             # npm update path-parse --depth 3
+      - notify_slack_error
+      - notify_slack_pass
 
   deploy-infrastructure:
     <<: *aws_image
