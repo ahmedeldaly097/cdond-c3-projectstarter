@@ -2,4 +2,7 @@
 	https://github.com/ahmedeldaly097/cdond-c3-projectstarter
 
 2. Public URL for your S3 Bucket (aka, your front-end). [URL02]
-	http://udapeople-4eebf71.s3-website-us-east-1.amazonaws.com
+	http://udapeople-80298f4.s3-website-us-east-1.amazonaws.com
+
+3. the current CloudFront URL03 used [URL03_SCREENSHOT]
+	http://d1ch9vzpa5wmcc.cloudfront.net/#/employees
