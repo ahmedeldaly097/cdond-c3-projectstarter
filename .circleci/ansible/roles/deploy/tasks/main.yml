@@ -31,5 +31,13 @@
 - name: start app
   become: true
   shell: |
+    export TYPEORM_ENTITIES=./backend/dist/modules/domain/**/*.entity{.ts,.js}
+    export TYPEORM_HOST=localhost
+    export TYPEORM_PORT=5532
+    export TYPEORM_USERNAME=postgres
+    export TYPEORM_PASSWORD=password
+    export TYPEORM_DATABASE=glee
+    export TYPEORM_MIGRATIONS_DIR=./backend/dist/migrations
+    export TYPEORM_MIGRATIONS=./backend/dist/migrations/*.ts
     pm2 delete all
     pm2 start npm -- start
