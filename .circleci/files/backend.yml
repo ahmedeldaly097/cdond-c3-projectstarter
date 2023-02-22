@@ -42,4 +42,4 @@ Resources:
     Type: AWS::EC2::EIPAssociation
     Properties:
       AllocationId: "eipalloc-06c6c8d6373b9ea6c"
-      InstanceId: !Sub backend-${ID}
+      InstanceId: !Ref backend-${ID}
