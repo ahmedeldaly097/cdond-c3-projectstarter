@@ -322,7 +322,7 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            export URL="$$$http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
+            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             echo $URL
             if curl ${URL} | grep "Welcome"; then return 0; else return 1; fi
       - destroy-environment
@@ -368,7 +368,7 @@ jobs:
               aws s3 rb s3://udapeople-${OLD_CIRCLE_WORKFLOW_ID} --force  
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OLD_CIRCLE_WORKFLOW_ID}
               aws cloudformation delete-stack --stack-name udapeople-backend-${OLD_CIRCLE_WORKFLOW_ID}
-              echo successfully deleting old S3 bucket (udapeople-${OLD_CIRCLE_WORKFLOW_ID}) and EC2 instance.
+              echo successfully deleting old S3 bucket andEC2 instance.
             fi
 
 workflows:
@@ -399,7 +399,6 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
+      - cloudfront-update
       - cleanup:
           requires: [smoke-test, cloudfront-update]
