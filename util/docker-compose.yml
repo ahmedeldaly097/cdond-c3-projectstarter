@@ -8,4 +8,4 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=glee
     ports:
-      - "5532:5432"
+      - "5432:5432"
