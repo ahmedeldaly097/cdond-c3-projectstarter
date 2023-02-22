@@ -43,3 +43,4 @@ Resources:
     Properties:
       AllocationId: "eipalloc-06c6c8d6373b9ea6c"
       InstanceId: !Ref backend-${ID}
+    DependsOn: EC2Instance
